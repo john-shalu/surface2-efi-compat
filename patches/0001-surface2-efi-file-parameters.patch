@@ -1,0 +1,364 @@
+diff --git a/drivers/firmware/efi/libstub/file.c b/drivers/firmware/efi/libstub/file.c
+--- a/drivers/firmware/efi/libstub/file.c
++++ b/drivers/firmware/efi/libstub/file.c
+@@ -329,3 +329,172 @@
+ 	efi_free(alloc_size, alloc_addr);
+ 	return status;
+ }
++
++// SPDX-License-Identifier: GPL-2.0-only
++/* Surface 2 legacy test.efi compatibility; explicit build-time opt-in. */
++#ifdef CONFIG_EFI_SURFACE2_COMPAT
++static efi_loaded_image_t *surface2_image;
++static void *surface2_cmdline;
++static void *surface2_saved_options;
++static u32 surface2_saved_options_size;
++static bool surface2_legacy;
++static efi_status_t surface2_log_status;
++
++static void surface2_hex(char *p, unsigned long n)
++{
++	static const char digits[] = "0123456789abcdef";
++	int i;
++
++	for (i = 7; i >= 0; i--, n >>= 4)
++		p[i] = digits[n & 15];
++}
++
++void efi_surface2_log(unsigned int stage, efi_status_t result,
++		      unsigned long detail)
++{
++	efi_file_protocol_t *volume = NULL, *file = NULL;
++	efi_status_t status;
++	unsigned long size;
++	char record[128];
++
++	if (!IS_ENABLED(CONFIG_EFI_SURFACE2_BOOT_LOG) || !surface2_image || stage >= 16)
++		return;
++	memset(record, ' ', sizeof(record));
++	memcpy(record, "S2STUB1 stage=", 14);
++	surface2_hex(record + 14, stage);
++	memcpy(record + 23, "status=", 7);
++	surface2_hex(record + 30, result);
++	memcpy(record + 39, "detail=", 7);
++	surface2_hex(record + 46, detail);
++	record[126] = '\r';
++	record[127] = '\n';
++
++	status = efi_open_volume(surface2_image, &volume);
++	if (status != EFI_SUCCESS)
++		goto out;
++	/* The deployment creates this fixed-size file; never create/resize it. */
++	status = efi_call_proto(volume, open, &file,
++		L"\\surface-upgrade\\stub-native\\boot-stage.log",
++		EFI_FILE_MODE_READ | EFI_FILE_MODE_WRITE, 0);
++	if (status != EFI_SUCCESS)
++		goto out;
++	status = efi_call_proto(file, set_position, (u64)stage * 128);
++	if (status != EFI_SUCCESS)
++		goto out;
++	size = sizeof(record);
++	status = efi_call_proto(file, write, &size, record);
++	if (status != EFI_SUCCESS)
++		goto out;
++	if (size != sizeof(record)) {
++		status = EFI_DEVICE_ERROR;
++		goto out;
++	}
++	status = efi_call_proto(file, flush);
++out:
++	if (file)
++		efi_call_proto(file, close);
++	if (volume)
++		efi_call_proto(volume, close);
++	surface2_log_status = status;
++}
++
++bool efi_surface2_legacy_active(void)
++{
++	return surface2_legacy;
++}
++
++efi_status_t efi_surface2_prepare(efi_loaded_image_t *image)
++{
++	efi_file_protocol_t *volume = NULL, *file = NULL;
++	struct finfo fi = {
++		.filename = L"\\surface-upgrade\\stub-native\\cmdline.txt",
++	};
++	efi_status_t status;
++	unsigned long size, done = 0, n, len = 0, i;
++	unsigned char *data = NULL;
++	efi_char16_t *wide;
++
++	/* A normal bootloader owns its parameters and DTB; leave them alone. */
++	if (image->load_options && image->load_options_size)
++		return EFI_SUCCESS;
++	surface2_image = image;
++	efi_surface2_log(1, EFI_SUCCESS, (unsigned long)image->image_base);
++	if (surface2_log_status != EFI_SUCCESS)
++		return surface2_log_status;
++	efi_surface2_log(2, EFI_SUCCESS, 0);
++	status = efi_open_volume(image, &volume);
++	if (status != EFI_SUCCESS)
++		goto out;
++	status = efi_open_file(volume, &fi, &file, &size);
++	if (status != EFI_SUCCESS)
++		goto out;
++	if (!size || size > 2048) {
++		status = EFI_BAD_BUFFER_SIZE;
++		goto out;
++	}
++	status = efi_bs_call(allocate_pool, EFI_LOADER_DATA,
++			     (size + 1) * sizeof(efi_char16_t), (void **)&data);
++	if (status != EFI_SUCCESS)
++		goto out;
++	while (done < size) {
++		n = size - done;
++		status = efi_call_proto(file, read, &n, data + done);
++		if (status != EFI_SUCCESS)
++			goto out;
++		if (!n || n > size - done) {
++			status = EFI_DEVICE_ERROR;
++			goto out;
++		}
++		done += n;
++	}
++	len = size;
++	while (len && (data[len - 1] == '\r' || data[len - 1] == '\n' ||
++		       data[len - 1] == ' ' || data[len - 1] == '\t'))
++		len--;
++	if (!len) {
++		status = EFI_INVALID_PARAMETER;
++		goto out;
++	}
++	for (i = 0; i < len; i++) {
++		if (data[i] == '\t')
++			data[i] = ' ';
++		if (data[i] < 0x20 || data[i] > 0x7e) {
++			status = EFI_INVALID_PARAMETER;
++			goto out;
++		}
++	}
++	wide = (efi_char16_t *)data;
++	for (i = len; i; i--)
++		wide[i - 1] = data[i - 1];
++	wide[len] = 0;
++	surface2_saved_options = image->load_options;
++	surface2_saved_options_size = image->load_options_size;
++	image->load_options = wide;
++	image->load_options_size = (len + 1) * sizeof(*wide);
++	surface2_cmdline = data;
++	data = NULL;
++	surface2_legacy = true;
++	status = EFI_SUCCESS;
++out:
++	if (data)
++		efi_bs_call(free_pool, data);
++	if (file)
++		efi_call_proto(file, close);
++	if (volume)
++		efi_call_proto(volume, close);
++	efi_surface2_log(3, status, status == EFI_SUCCESS ? len : done);
++	return status;
++}
++
++void efi_surface2_cleanup(efi_loaded_image_t *image)
++{
++	if (surface2_cmdline) {
++		image->load_options = surface2_saved_options;
++		image->load_options_size = surface2_saved_options_size;
++		efi_bs_call(free_pool, surface2_cmdline);
++		surface2_cmdline = NULL;
++	}
++	surface2_image = NULL;
++	surface2_legacy = false;
++}
++#endif
+diff --git a/drivers/firmware/efi/libstub/efistub.h b/drivers/firmware/efi/libstub/efistub.h
+--- a/drivers/firmware/efi/libstub/efistub.h
++++ b/drivers/firmware/efi/libstub/efistub.h
+@@ -667,7 +667,7 @@
+ 							 unsigned long *,
+ 							 void *);
+ 		efi_status_t	(__efiapi *write)	(efi_file_protocol_t *,
+-							 unsigned long, void *);
++							 unsigned long *, void *);
+ 		efi_status_t	(__efiapi *get_position)(efi_file_protocol_t *,
+ 							 u64 *);
+ 		efi_status_t	(__efiapi *set_position)(efi_file_protocol_t *,
+@@ -1267,4 +1267,22 @@
+ efi_status_t efi_zboot_decompress_init(unsigned long *alloc_size);
+ efi_status_t efi_zboot_decompress(u8 *out, unsigned long outlen);
+ 
++
++#ifdef CONFIG_EFI_SURFACE2_COMPAT
++efi_status_t efi_surface2_prepare(efi_loaded_image_t *image);
++void efi_surface2_cleanup(efi_loaded_image_t *image);
++bool efi_surface2_legacy_active(void);
++void efi_surface2_log(unsigned int stage, efi_status_t status,
++                      unsigned long detail);
++#else
++static inline efi_status_t efi_surface2_prepare(efi_loaded_image_t *image)
++{
++        return EFI_SUCCESS;
++}
++static inline void efi_surface2_cleanup(efi_loaded_image_t *image) { }
++static inline bool efi_surface2_legacy_active(void) { return false; }
++static inline void efi_surface2_log(unsigned int stage, efi_status_t status,
++                                  unsigned long detail) { }
+ #endif
++
++#endif
+diff --git a/drivers/firmware/efi/Kconfig b/drivers/firmware/efi/Kconfig
+--- a/drivers/firmware/efi/Kconfig
++++ b/drivers/firmware/efi/Kconfig
+@@ -100,6 +100,28 @@
+ 	  functionality for bootloaders that do not have such support
+ 	  this option is necessary.
+ 
++config EFI_SURFACE2_COMPAT
++	bool "Surface 2 legacy test.efi file parameters and boot checkpoints"
++	depends on ARM && ARCH_TEGRA && EFI_GENERIC_STUB && EFI_ARMSTUB_DTB_LOADER
++	default n
++	help
++	  Opt-in compatibility for the original Surface 2 Windows boot shim.
++	  If EFI LoadOptions is empty, read the ASCII command line from
++	  \surface-upgrade\stub-native\cmdline.txt on the image filesystem.
++	  Allow its dtb= file even if legacy firmware cannot report SecureBoot.
++	  The DTB must identify microsoft,surface-2. Checkpoints are written
++	  only before ExitBootServices to an existing fixed-size log file.
++	  Normal bootloaders supplying LoadOptions retain standard behaviour.
++
++config EFI_SURFACE2_BOOT_LOG
++	bool "Write Surface 2 EFI boot checkpoints"
++	depends on EFI_SURFACE2_COMPAT
++	default n
++	help
++	  Diagnostic builds only: update a preallocated EFI boot-stage.log
++	  before ExitBootServices. Disable for daily use so the stub only
++	  reads boot files and never writes the EFI filesystem.
++
+ config EFI_BOOTLOADER_CONTROL
+ 	tristate "EFI Bootloader Control"
+ 	select UCS2_STRING
+diff --git a/drivers/firmware/efi/libstub/efi-stub-entry.c b/drivers/firmware/efi/libstub/efi-stub-entry.c
+--- a/drivers/firmware/efi/libstub/efi-stub-entry.c
++++ b/drivers/firmware/efi/libstub/efi-stub-entry.c
+@@ -37,7 +37,7 @@
+ {
+ 	efi_loaded_image_t *image;
+ 	efi_status_t status;
+-	unsigned long image_addr;
++	unsigned long image_addr = 0;
+ 	unsigned long image_size = 0;
+ 	/* addr/point and size pairs for memory management*/
+ 	char *cmdline_ptr = NULL;
+@@ -63,27 +63,37 @@
+ 		return status;
+ 	}
+ 
++	status = efi_surface2_prepare(image);
++	if (status != EFI_SUCCESS)
++		goto fail_surface2;
++
+ 	status = efi_handle_cmdline(image, &cmdline_ptr);
+ 	if (status != EFI_SUCCESS)
+-		return status;
++		goto fail_surface2;
+ 
+ 	efi_info("Booting Linux Kernel...\n");
+ 
++	efi_surface2_log(4, EFI_SUCCESS, 0);
+ 	status = handle_kernel_image(&image_addr, &image_size,
+ 				     &reserve_addr,
+ 				     &reserve_size,
+ 				     image, handle);
++	efi_surface2_log(5, status, image_addr);
+ 	if (status != EFI_SUCCESS) {
+ 		efi_err("Failed to relocate kernel\n");
+-		return status;
++		goto fail_surface2;
+ 	}
+ 
+ 	kernel_image_offset = image_addr - (unsigned long)image->image_base;
+ 
++	efi_surface2_log(6, EFI_SUCCESS, image_addr);
+ 	status = efi_stub_common(handle, image, image_addr, cmdline_ptr);
+ 
+ 	efi_free(image_size, image_addr);
+ 	efi_free(reserve_size, reserve_addr);
+ 
++fail_surface2:
++	efi_surface2_log(15, status, 0);
++	efi_surface2_cleanup(image);
+ 	return status;
+ }
+diff --git a/drivers/firmware/efi/libstub/efi-stub.c b/drivers/firmware/efi/libstub/efi-stub.c
+--- a/drivers/firmware/efi/libstub/efi-stub.c
++++ b/drivers/firmware/efi/libstub/efi-stub.c
+@@ -158,11 +158,15 @@
+ 	struct sysfb_display_info *dpy;
+ 	efi_status_t status;
+ 
++	efi_surface2_log(7, EFI_SUCCESS, 0);
+ 	status = check_platform_features();
++	efi_surface2_log(8, status, 0);
+ 	if (status != EFI_SUCCESS)
+ 		return status;
+ 
++	efi_surface2_log(9, EFI_SUCCESS, 0);
+ 	dpy = setup_primary_display();
++	efi_surface2_log(10, EFI_SUCCESS, (unsigned long)dpy);
+ 
+ 	efi_retrieve_eventlog();
+ 
+diff --git a/drivers/firmware/efi/libstub/fdt.c b/drivers/firmware/efi/libstub/fdt.c
+--- a/drivers/firmware/efi/libstub/fdt.c
++++ b/drivers/firmware/efi/libstub/fdt.c
+@@ -231,6 +231,7 @@
+ 	struct exit_boot_struct priv;
+ 	unsigned long fdt_addr = 0;
+ 	unsigned long fdt_size = 0;
++	enum efi_secureboot_mode secure_boot;
+ 
+ 	if (!efi_novamap) {
+ 		status = efi_alloc_virtmap(&priv.runtime_map, &desc_size,
+@@ -246,8 +247,11 @@
+ 	 * 'dtb=' unless UEFI Secure Boot is disabled.  We assume that secure
+ 	 * boot is enabled if we can't determine its state.
+ 	 */
++	secure_boot = efi_get_secureboot();
++	efi_surface2_log(11, EFI_SUCCESS, secure_boot);
+ 	if (!IS_ENABLED(CONFIG_EFI_ARMSTUB_DTB_LOADER) ||
+-	    efi_get_secureboot() != efi_secureboot_mode_disabled) {
++	    (secure_boot != efi_secureboot_mode_disabled &&
++	     !efi_surface2_legacy_active())) {
+ 		if (strstr(cmdline_ptr, "dtb="))
+ 			efi_err("Ignoring DTB from command line.\n");
+ 	} else {
+@@ -268,6 +272,17 @@
+ 			efi_info("Using DTB from configuration table\n");
+ 	}
+ 
++	if (efi_surface2_legacy_active() &&
++	    (!fdt_addr || fdt_size < sizeof(struct fdt_header) ||
++	     fdt_check_header((void *)fdt_addr) ||
++	     fdt_totalsize((void *)fdt_addr) > fdt_size ||
++	     fdt_node_check_compatible((void *)fdt_addr, 0,
++				       "microsoft,surface-2"))) {
++		status = EFI_LOAD_ERROR;
++		efi_surface2_log(12, status, fdt_addr);
++		goto fail;
++	}
++	efi_surface2_log(12, EFI_SUCCESS, fdt_addr);
+ 	if (!fdt_addr)
+ 		efi_info("Generating empty DTB\n");
+ 
+@@ -289,6 +304,7 @@
+ 
+ 	priv.new_fdt_addr = (void *)*new_fdt_addr;
+ 
++	efi_surface2_log(13, EFI_SUCCESS, *new_fdt_addr);
+ 	status = efi_exit_boot_services(handle, &priv, exit_boot_func);
+ 
+ 	if (status == EFI_SUCCESS) {

@@ -1,0 +1,25 @@
+{
+  "source_commit": "bfffc6d6656e87f3de3aa4c09d852849081ef088",
+  "input_vmlinuz_sha256": "794a3766aed121654aed5b88f3a8d826f38b47fa4fcfb5bb01d3267518a0d9e1",
+  "output_efi_sha256": "1cbe919472691478a1ca9dc3d8590e084e617cb705b2d2aa64ec2091a90b0c30",
+  "output_size": 7643648,
+  "kernel_payload_byte_identical": true,
+  "metadata": {
+    "xz_offset": 62424,
+    "metadata_offset": 57308,
+    "kernel_bss_size": 335396,
+    "text_offset": 32768,
+    "malloc_size": 65536,
+    "payload_size": 29724216,
+    "payload_sha256": "5f2beb941f6fa76bcab8cb3094ace8d08313121d7278380e3e17bb389f993880"
+  },
+  "pe": {
+    "machine": "0x1c2",
+    "subsystem": 10,
+    "entry_rva": 32324,
+    "section_count": 2
+  },
+  "diagnostic_file_logging": false,
+  "firmware_boot_tested_by_this_command": false,
+  "compiler": "gcc (Alpine 15.2.0) 15.2.0"
+}

@@ -1,0 +1,34 @@
+Subject: [CANDIDATE] drm/grate: release the per-buffer fence pointer arrays
+
+Target: libre-tegra/linux bfffc6d6656e87f3de3aa4c09d852849081ef088 (7.0.1 reference).
+Runtime leak reproduced on both 5.17 and 7.0.1: Xorg allocations from
+ dma_resv_get_fences accumulate without matching frees. Pausing popsquares
+ or switching to a running blank saver stops these allocations.
+This source patch has not been compiled or installed.
+
+The scheduler can consume all fence references and zero num_shared while
+ the pointer array itself remains owned by the job. Free it regardless of
+ that count during normal cleanup, and free successful earlier entries
+ during error unwind. The modern dma_resv_get_fences clears and frees its
+ own failed allocation, so the existing error-loop bounds remain unchanged.
+
+--- a/drivers/gpu/drm/grate/uapi/job_v2.c
++++ b/drivers/gpu/drm/grate/uapi/job_v2.c
+@@ -81,6 +81,8 @@
+ 
+ 		for (k = 0; k < f->num_shared; k++)
+ 			dma_fence_put(f->shared[k]);
++
++		kfree(f->shared);
+ 	}
+ }
+ 
+@@ -573,6 +575,8 @@
+ 
+ 		for (k = 0; k < f->num_shared; k++)
+ 			dma_fence_put(f->shared[k]);
++
++		kfree(f->shared);
+ 	}
+ 
+ 	return err;

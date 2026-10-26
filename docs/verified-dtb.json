@@ -1,0 +1,119 @@
+{
+  "base_sha256": "781e4e8b3e53c3c444b89e6fe08f36def636c7959b190233a23512b78b0fd9db",
+  "fixed_sha256": "834cadac624036f4c987071c07099d0d28d3de88b17d3425aceea9cf494a1f3d",
+  "fixed_size": 26163,
+  "compiler": "Version: DTC 1.7.2",
+  "all_unrelated_properties_unchanged": true,
+  "reserved_memory_unchanged": true,
+  "boot_cpu_unchanged": true,
+  "changes": [
+    {
+      "node": "/i2c@7000d000/pmic@48/regulators/fet6",
+      "property": "phandle",
+      "before": null,
+      "after": "00000022"
+    },
+    {
+      "node": "/i2c@7000d000/pmic@58/pmic/regulators/ldo9",
+      "property": "phandle",
+      "before": null,
+      "after": "00000021"
+    },
+    {
+      "node": "/mmc@78000400",
+      "property": "status",
+      "before": "64697361626c656400",
+      "after": "6f6b617900"
+    },
+    {
+      "node": "/mmc@78000400",
+      "property": "vmmc-supply",
+      "before": null,
+      "after": "00000022"
+    },
+    {
+      "node": "/mmc@78000400",
+      "property": "vqmmc-supply",
+      "before": null,
+      "after": "00000021"
+    },
+    {
+      "node": "/pinmux@70000868/pinmux/sdmmc3_clk_pa6",
+      "property": "nvidia,enable-input",
+      "before": null,
+      "after": "00000001"
+    },
+    {
+      "node": "/pinmux@70000868/pinmux/sdmmc3_clk_pa6",
+      "property": "nvidia,function",
+      "before": null,
+      "after": "73646d6d633300"
+    },
+    {
+      "node": "/pinmux@70000868/pinmux/sdmmc3_clk_pa6",
+      "property": "nvidia,pins",
+      "before": null,
+      "after": "73646d6d63335f636c6b5f70613600"
+    },
+    {
+      "node": "/pinmux@70000868/pinmux/sdmmc3_clk_pa6",
+      "property": "nvidia,pull",
+      "before": null,
+      "after": "00000000"
+    },
+    {
+      "node": "/pinmux@70000868/pinmux/sdmmc3_clk_pa6",
+      "property": "nvidia,tristate",
+      "before": null,
+      "after": "00000000"
+    },
+    {
+      "node": "/pinmux@70000868/pinmux/sdmmc3_cmd_pa7",
+      "property": "nvidia,function",
+      "before": "756172746100",
+      "after": "73646d6d633300"
+    },
+    {
+      "node": "/pinmux@70000868/pinmux/sdmmc3_cmd_pa7",
+      "property": "nvidia,pins",
+      "before": "73646d6d63335f636d645f70613700",
+      "after": "73646d6d63335f636d645f7061370073646d6d63335f646174305f7062370073646d6d63335f646174315f7062360073646d6d63335f646174325f7062350073646d6d63335f646174335f7062340073646d6d63335f636c6b5f6c625f6f75745f706565340073646d6d63335f636c6b5f6c625f696e5f7065653500"
+    },
+    {
+      "node": "/pinmux@70000868/pinmux/sdmmc3_cmd_pa7",
+      "property": "nvidia,tristate",
+      "before": "00000001",
+      "after": "00000000"
+    },
+    {
+      "node": "/pinmux@70000868/pinmux/sdmmc3_dat1_pb6",
+      "property": "nvidia,enable-input",
+      "before": "00000000",
+      "after": null
+    },
+    {
+      "node": "/pinmux@70000868/pinmux/sdmmc3_dat1_pb6",
+      "property": "nvidia,function",
+      "before": "756172746100",
+      "after": null
+    },
+    {
+      "node": "/pinmux@70000868/pinmux/sdmmc3_dat1_pb6",
+      "property": "nvidia,pins",
+      "before": "73646d6d63335f646174315f70623600",
+      "after": null
+    },
+    {
+      "node": "/pinmux@70000868/pinmux/sdmmc3_dat1_pb6",
+      "property": "nvidia,pull",
+      "before": "00000000",
+      "after": null
+    },
+    {
+      "node": "/pinmux@70000868/pinmux/sdmmc3_dat1_pb6",
+      "property": "nvidia,tristate",
+      "before": "00000000",
+      "after": null
+    }
+  ]
+}

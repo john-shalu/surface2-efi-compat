@@ -1,0 +1,24 @@
+{
+  "source_commit": "bfffc6d6656e87f3de3aa4c09d852849081ef088",
+  "source_archive_url": "https://codeberg.org/api/v1/repos/libre-tegra/linux/archive/bfffc6d6656e87f3de3aa4c09d852849081ef088.tar.gz",
+  "source_archive_sha256": "c73e22b5153a2946ffdf2cc40311ca7667e6ae64791ece960d9db88a279af63c",
+  "kernel_package": "linux-postmarketos-grate-7.0.1-r4.apk",
+  "kernel_package_url": "https://mirrors.tuna.tsinghua.edu.cn/postmarketOS/master/armv7/linux-postmarketos-grate-7.0.1-r4.apk",
+  "kernel_package_sha256": "d0e00bacddd21a2aaa2a116f9a3bf199a01a73b117d5f13e449b37f08094bdb1",
+  "original_vmlinuz_sha256": "794a3766aed121654aed5b88f3a8d826f38b47fa4fcfb5bb01d3267518a0d9e1",
+  "kernel_image_sha256": "5f2beb941f6fa76bcab8cb3094ace8d08313121d7278380e3e17bb389f993880",
+  "config_sha256": "6b09863a5f4356ce615f7d5d4cdecbba4cd2cc208c34125954af9534648f9248",
+  "tested_daily_efi_sha256": "1cbe919472691478a1ca9dc3d8590e084e617cb705b2d2aa64ec2091a90b0c30",
+  "source_makefile_sha256": "4c6cc15c06bb597c1e8a802a2a882b5cc9bcba7876cbdf7475f68dc7c00e1e6e",
+  "original_dtb_sha256": "781e4e8b3e53c3c444b89e6fe08f36def636c7959b190233a23512b78b0fd9db",
+  "tested_legacy_boot_shim": {
+    "archive_url": "https://files.open-rt.party/Linux/Other/surface-2-bootfiles%2Bkernel.zip",
+    "archive_size": 8233155,
+    "archive_sha256": "da49c0b228430508c57849fe4bb52b6aea56f14dc97602408e8d064e93c95eb9",
+    "member": "test.efi",
+    "size": 31232,
+    "sha256": "7242d9fc88753f6464d5ab3dd830c22c395b14f1e41525c544939310b630e95b",
+    "binary_redistributed": false,
+    "verified_date": "2026-10-26"
+  }
+}

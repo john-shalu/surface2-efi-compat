@@ -1,0 +1,26 @@
+{
+  "drivers/firmware/efi/libstub/file.c": {
+    "original_sha256": "c500c52e88ea846dd737c081b9745f04776424e5a08c97fb4005ee53517d74da",
+    "modified_sha256": "8bbc415ac164558f1909531a2487c014da55392f591fa7e8f0fe1d13bd16f553"
+  },
+  "drivers/firmware/efi/libstub/efistub.h": {
+    "original_sha256": "e93a64b85a91a86506957ce339a54950d6ee831af8732ce806990291bddf32e3",
+    "modified_sha256": "7c4a5e66bc50be0fdee483016170124732da034f2f31c141ca8f7a62a7d876bf"
+  },
+  "drivers/firmware/efi/Kconfig": {
+    "original_sha256": "a719bf4363ca024f95ebfe3f8b0cb2c926af7479fc03baa0b07217e208265dae",
+    "modified_sha256": "65e3ff6acda3ad5af70b1ec2fc079432dd4d1f7a7058203f615a77b395e3e167"
+  },
+  "drivers/firmware/efi/libstub/efi-stub-entry.c": {
+    "original_sha256": "9d4a15b5c7a542fa402ce7b83b06a98b238956c25f849678b1379c6de903060b",
+    "modified_sha256": "555588de77932286eeb6d5a6e28e3335f88a87e89c554fc84c72169868870a89"
+  },
+  "drivers/firmware/efi/libstub/efi-stub.c": {
+    "original_sha256": "27a8eab29b3cadea7a630df44aa721f49a9f0ea32b5980ff61b608208d3adde4",
+    "modified_sha256": "8bdac650e0d33b1de53a070800d2798a2b7c4bcee523ff162d1106e80e06885a"
+  },
+  "drivers/firmware/efi/libstub/fdt.c": {
+    "original_sha256": "cebd8b1121b4ee76e123b9647955f7d4feec1c2730c4faa17751ff9c79653d15",
+    "modified_sha256": "cc91bd11dca99740cd18dbc9ecf5c695df4d76b3d9d2bfc959528e1a16017876"
+  }
+}

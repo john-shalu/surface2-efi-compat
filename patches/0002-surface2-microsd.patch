@@ -1,0 +1,59 @@
+--- a/arch/arm/boot/dts/nvidia/tegra114-microsoft-surface-2-common.dtsi
++++ b/arch/arm/boot/dts/nvidia/tegra114-microsoft-surface-2-common.dtsi
+@@ -54,22 +54,26 @@
+ 		pinctrl-0 = <&state_default>;
+ 
+ 		state_default: pinmux {
+-			/* UART A RX ??? */
+-			sdmmc3_cmd_pa7 {
+-				nvidia,pins = "sdmmc3_cmd_pa7";
+-				nvidia,function = "uarta";
+-				nvidia,pull = <TEGRA_PIN_PULL_UP>;
+-				nvidia,tristate = <TEGRA_PIN_ENABLE>;
+-				nvidia,enable-input = <TEGRA_PIN_ENABLE>;
+-			};
+-
+-			/* UART A TX */
+-			sdmmc3_dat1_pb6 {
+-				nvidia,pins = "sdmmc3_dat1_pb6";
+-				nvidia,function = "uarta";
++			sdmmc3_clk_pa6 {
++				nvidia,pins = "sdmmc3_clk_pa6";
++				nvidia,function = "sdmmc3";
+ 				nvidia,pull = <TEGRA_PIN_PULL_NONE>;
+ 				nvidia,tristate = <TEGRA_PIN_DISABLE>;
+-				nvidia,enable-input = <TEGRA_PIN_DISABLE>;
++				nvidia,enable-input = <TEGRA_PIN_ENABLE>;
++			};
++
++			sdmmc3_cmd_pa7 {
++				nvidia,pins = "sdmmc3_cmd_pa7",
++						"sdmmc3_dat0_pb7",
++						"sdmmc3_dat1_pb6",
++						"sdmmc3_dat2_pb5",
++						"sdmmc3_dat3_pb4",
++						"sdmmc3_clk_lb_out_pee4",
++						"sdmmc3_clk_lb_in_pee5";
++				nvidia,function = "sdmmc3";
++				nvidia,pull = <TEGRA_PIN_PULL_UP>;
++				nvidia,tristate = <TEGRA_PIN_DISABLE>;
++				nvidia,enable-input = <TEGRA_PIN_ENABLE>;
+ 			};
+ 
+ 			panel-backlight {
+@@ -563,12 +567,11 @@
+ 
+ 	/* SD - SDMMC-3 */
+ 	sdmmc3: mmc@78000400 {
+-		status = "disabled"; // disable uart in UEFI stub
++		status = "okay";
+ 		bus-width = <4>;
+ 		cd-gpios = <&gpio TEGRA_GPIO(V, 2) GPIO_ACTIVE_LOW>;
+-		// Need to recheck if SD works but UART is more important for now
+-		// vqmmc-supply = <&tps65913_ldo9>; // io voltage
+-		// vmmc-supply = <&tps65090_fet6>; // card power
++		vqmmc-supply = <&tps65913_ldo9>; /* io voltage */
++		vmmc-supply = <&tps65090_fet6>;  /* card power */
+ 	};
+ 
+ 	/* eMMC - SDMMC-4 */

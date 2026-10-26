@@ -1,0 +1,10 @@
+/build/
+/downloads/
+/out/
+__pycache__/
+*.pyc
+*.efi
+*.dtb
+*.apk
+*.elf
+*.log
